@@ -11,5 +11,6 @@
                  [com.google.cloud/google-cloud-pubsub "0.25.0-beta"]
                  [com.google.cloud/google-cloud-storage "1.7.0"]]
   :profiles
-  {:dev {:source-paths ["src" "dev"]}
+  {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]
+         :source-paths ["src" "dev"]}
    :uberjar {:main sasara-agent.system}})
