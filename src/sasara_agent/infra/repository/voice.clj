@@ -5,11 +5,10 @@
             [com.stuartsierra.component :as component]
             [sasara-agent.domain.entity.voice :as voice]
             [sasara-agent.infra.datasource.pubsub :as pubsub]
-            [sasara-agent.infra.datasource.cloud-storage :as cloud-storage]
-            [sasara-agent.infra.datasource.shell :as shell]))
+            [sasara-agent.infra.datasource.cloud-storage :as cloud-storage]))
 
 (s/def ::voice-repository-component
-  (s/keys :opt-un [:pubsub/pubsub-publisher-component
+  (s/keys :req-un [:pubsub/pubsub-publisher-component
                    :cloud-storage/cloud-storage-component
                    :shell/shell-component]))
 
@@ -66,7 +65,7 @@
   (->> (upload-voice comp voice)
        (publish-voice comp voice)))
 
-(defrecord VoiceRepositoryComponent [pubsub-publisher]
+(defrecord VoiceRepositoryComponent []
   component/Lifecycle
   (start [this]
     (println ";; Starting VoiceRepositoryComponent")

@@ -5,7 +5,8 @@
             [sasara-agent.infra.datasource.cloud-storage :refer [cloud-storage-component]]
             [sasara-agent.infra.datasource.shell :refer [shell-component]]
             [sasara-agent.infra.datasource.pubsub :refer [pubsub-publisher-component pubsub-subscription-component]]
-            [sasara-agent.infra.repository.voice :refer [voice-repository-component]])
+            [sasara-agent.infra.repository.voice :refer [voice-repository-component]]
+            [sasara-agent.infra.repository.intent :refer [intent-repository-component]])
   (:gen-class))
 
 (defn sasara-agent-system
@@ -18,8 +19,9 @@
     :pubsub-subscription-component (pubsub-subscription-component)
     :voice-repository-component (component/using (voice-repository-component)
                                                  [:cloud-storage-component
-                                                  :pubsub-publisher-component
-                                                  :shell-component])))
+                                                  :pubsub-publisher-component])
+    :intent-repository-component (component/using (intent-repository-component)
+                                                  [:pubsub-subscription-component])))
 
 (defn load-config []
   {:sasara-agent-bucket-name (env :sasara-agent-bucket-name)
