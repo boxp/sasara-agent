@@ -10,8 +10,10 @@
                                            SubscriptionAdminClient
                                            Subscriber
                                            MessageReceiver)
-           (com.google.pubsub.v1 TopicName
+           (com.google.pubsub.v1 Topic
+                                 TopicName
                                  SubscriptionName
+                                 Subscription
                                  PubsubMessage
                                  PushConfig))
   (:require [clojure.spec.alpha :as s]
@@ -19,15 +21,38 @@
             [com.stuartsierra.component :as component]))
 
 (s/def ::topic-key keyword?)
-(s/def ::project-id string?)
+(s/def ::subscription-key keyword?)
+(s/def ::project-id (s/nilable string?))
 (s/def ::publisher
   (s/with-gen #(instance? Publisher %)
     (fn [] (gen/fmap (fn [s] (Publisher/defaultBuilder
                                (TopicName/create s s)))
                      (s/gen string?)))))
 (s/def ::publishers
-  (s/coll-of ::publisher))
+  (s/map-of keyword? ::publisher))
+(s/def ::subscriber
+  (s/with-gen #(instance? Subscriber %)
+    (fn [] (gen/fmap (fn [s] (Subscriber/defaultBuilder
+                               (SubscriptionName/create s s)
+                               (reify MessageReceiver
+                                 (receiveMessage [this message consumer]))))
+                     (s/gen string?)))))
+(s/def ::subscribers
+  (s/map-of keyword? ::subscriber))
+(s/def ::subscription #(instance? Subscription %))
+(s/def ::pubsub-message
+  (s/with-gen #(instance? PubsubMessage %)
+    (fn [] (gen/fmap (fn [s] (-> s .getBytes PubsubMessage/parseFrom))
+                     (s/gen string?)))))
+(s/def ::pubsub-publisher-component
+  (s/keys :req-un [::project-id ::publishers]))
+(s/def ::pubsub-subscriber-component
+  (s/keys :req-un [::project-id ::subscribers]))
 
+(s/fdef create-topic
+  :args (s/cat :comp ::pubsub-publisher-component
+               :topic-key ::topic-key)
+  :ret #(instance? Topic %))
 (defn create-topic
   [comp topic-key]
   (let [topic-admin-cli (TopicAdminClient/create)]
@@ -39,6 +64,10 @@
           (TopicName/create (:project-id comp)
             (name topic-key))))))
 
+(s/fdef create-publisher
+  :args (s/cat :comp ::pubsub-publisher-component
+               :topic-key ::topic-key)
+  :ret ::pubsub-publisher-component)
 (defn create-publisher
   [comp topic-key]
   (if-not (get (:publishers comp) topic-key)
@@ -49,6 +78,16 @@
                (assoc-in comp [:publishers topic-key])))
     comp))
 
+(s/fdef ::on-success
+        :args (s/cat :result string?)
+        :ret true?)
+(s/fdef publish
+  :args (s/cat :comp ::pubsub-publisher-component
+               :topic-key ::topic-key
+               :message string?
+               :on-success ::on-success
+               :on-failure #(fn? %))
+  :ret ::pubsub-publisher-component)
 (defn publish
   [{:keys [publishers project-id] :as comp} topic-key message on-success on-failure]
   (let [data (ByteString/copyFromUtf8 message)
@@ -72,10 +111,18 @@
         (dissoc :publishers)
         (dissoc :project-id))))
 
+(s/fdef pubsub-publisher-component
+  :args (s/cat)
+  :ret ::pubsub-publisher-component)
 (defn pubsub-publisher-component
   []
   (map->PubSubPublisherComponent {}))
 
+(s/fdef create-subscription
+  :args (s/cat :comp ::pubsub-subscriber-component
+               :topic-key ::topic-key
+               :subscription-key ::subscription-key)
+  :ret ::subscription)
 (defn create-subscription
   [comp topic-key subscription-key]
   (let [topic-name (create-topic comp topic-key)
@@ -88,6 +135,13 @@
                              push-config
                              ack-deadline-second))))
 
+(s/fdef add-subscriber
+  :args (s/cat :comp ::pubsub-subscriber-component
+               :topic-key ::topic-key
+               :subscription-key ::subscription-key
+               :on-receive (s/fspec :args (s/cat :message ::pubsub-message)
+                                    :ret nil?))
+  :ret ::pubsub-subscriber-component)
 (defn add-subscriber
   [comp topic-key subscription-key on-receive]
   (let [subscription-name (SubscriptionName/create (:project-id comp) (name subscription-key))
@@ -116,6 +170,9 @@
         (dissoc :project-id)
         (dissoc :subscribers))))
 
+(s/fdef pubsub-subscription-component
+  :args (s/cat)
+  :ret ::pubsub-subscriber-component)
 (defn pubsub-subscription-component
   []
   (map->PubSubSubscriptionComponent {}))

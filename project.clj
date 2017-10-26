@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.9.0-beta2"]
                  [org.clojure/core.async "0.3.443"]
                  [environ "1.1.0"]
+                 [cheshire "5.8.0"]
                  [com.stuartsierra/component "0.3.2"]
                  [org.clojure/tools.namespace "0.2.10"]
                  [com.google.cloud/google-cloud-pubsub "0.25.0-beta"]
