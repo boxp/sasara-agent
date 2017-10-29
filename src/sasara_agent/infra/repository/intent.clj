@@ -17,6 +17,8 @@
 (def topic-key :sasara-intent)
 (def subscription-key :sasara-intent-agent)
 
+(def voice-file-path "C:/WINDOWS/TEMP/sasara_output.wav")
+
 (s/fdef message->intent
   :args (s/cat :message string?)
   :ret ::intent/intent)
@@ -31,6 +33,36 @@
 (defn subscribe
   [comp]
   (:channel comp))
+
+(s/fdef speak-intent
+  :args (s/cat :comp ::shell/shell-component
+               :intent ::intent/intent)
+  :ret nil?)
+(defn- speak-intent
+  [{:keys [shell-component] :as comp} intent]
+  (shell/exec-command shell-component {:text (:message intent)}))
+
+(s/fdef fetch-voice
+  :args (s/cat :intent ::intent/intent)
+  :ret ::voice/voice)
+(defn- fetch-voice
+  [intent]
+  (let [f (java.io.File. voice-file-path)
+        ary (byte-array (.length f))
+        is (java.io.FileInputStream. f)]
+    (.read is ary)
+    (.close is)
+    {:content ary
+     :message (:message intent)}))
+
+(s/fdef intent->voice
+  :args (s/cat :comp ::intent-repository-component
+               :intent ::intent/intent)
+  :ret ::voice/voice)
+(defn intent->voice
+  [comp intent]
+  (do (speak-intent comp intent)
+      (fetch-voice intent)))
 
 (defrecord IntentRepositoryComponent [channel]
   component/Lifecycle

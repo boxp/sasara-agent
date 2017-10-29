@@ -1,2 +1,2 @@
 {:sasara-agent-bucket-name "sasara-dev"
- :sasara-agent-command-path "./tools/sasara-cli/sasara-cli/bin/Release/sasara.exe"}
+ :sasara-agent-command-path "./tools/sasara-cli/sasara-cli/bin/Release/sasara-cli.exe"}
