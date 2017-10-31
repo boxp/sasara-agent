@@ -27,10 +27,10 @@
   (-> message
       (parse-string true)))
 
-(s/fdef subscribe
+(s/fdef subscribe-intent
   :args (s/cat :comp ::intent-repository-component)
   :ret ::channel)
-(defn subscribe
+(defn subscribe-intent
   [comp]
   (:channel comp))
 
@@ -67,7 +67,7 @@
 (defrecord IntentRepositoryComponent [channel]
   component/Lifecycle
   (start [this]
-    (let [c (chan)]
+    (let [c (chan 1 (map message->intent))]
       (println ";; Starting IntentRepositoryComponent")
       (try
         (pubsub/create-subscription (:pubsub-subscription-component this)
@@ -79,11 +79,11 @@
           (update :pubsub-subscription-component
                   #(pubsub/add-subscriber % topic-key subscription-key
                                           (fn [m]
-                                            (put! c (message->intent m)))))
+                                            (put! c m))))
           (assoc :channel c))))
   (stop [this]
     (println ";; Stopping IntentRepositoryComponent")
-    (close! (:channel this))
+    (when (:channel this) (close! (:channel this)))
     (-> this
         (dissoc :channel))))
 
