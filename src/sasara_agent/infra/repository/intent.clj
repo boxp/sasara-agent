@@ -1,4 +1,5 @@
 (ns sasara-agent.infra.repository.intent
+  (:import (com.google.pubsub.v1 PubsubMessage))
   (:require [clojure.spec.alpha :as s]
             [clojure.core.async :refer [chan put! close!]]
             [cheshire.core :refer [parse-string]]
@@ -8,6 +9,7 @@
             [sasara-agent.infra.datasource.pubsub :as pubsub]
             [sasara-agent.infra.datasource.shell :as shell]))
 
+(s/def ::message #(instance? PubsubMessage %))
 (s/def ::channel #(instance? (-> (chan) class) %))
 (s/def ::intent-repository-component
   (s/keys :req-un [:pubsub/pubsub-subscription-component
@@ -20,11 +22,13 @@
 (def voice-file-path "C:/WINDOWS/TEMP/sasara_output.wav")
 
 (s/fdef message->intent
-  :args (s/cat :message string?)
+  :args (s/cat :message ::message)
   :ret ::intent/intent)
 (defn message->intent
   [message]
   (-> message
+      .getData
+      .toStringUtf8
       (parse-string true)))
 
 (s/fdef subscribe-intent
