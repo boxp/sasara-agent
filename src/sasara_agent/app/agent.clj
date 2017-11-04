@@ -22,6 +22,7 @@
   component/Lifecycle
   (start [this]
     (println ";; Starting AppAgentComponent")
+    (agent-loop this)
     this)
   (stop [this]
     (println ";; Stopping AppAgentComponent")
