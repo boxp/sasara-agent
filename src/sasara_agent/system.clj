@@ -23,7 +23,8 @@
                                                  [:cloud-storage-component
                                                   :pubsub-publisher-component])
     :intent-repository-component (component/using (intent-repository-component)
-                                                  [:pubsub-subscription-component])
+                                                  [:pubsub-subscription-component
+                                                   :shell-component])
     :speak-usecase-component (component/using (speak-usecase-component)
                                                 [:intent-repository-component
                                                  :voice-repository-component])
