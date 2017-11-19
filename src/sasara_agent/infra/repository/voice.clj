@@ -21,7 +21,10 @@
 (defn- upload-voice
   [{:keys [cloud-storage-component] :as comp} voice]
   (cloud-storage/upload-file cloud-storage-component
-                             {:file-name (-> voice :content hash str)
+                             {:file-name (-> voice
+                                             :content
+                                             hash
+                                             (str ".wav"))
                               :file (-> voice :content)}))
 
 (s/def ::message string?)
